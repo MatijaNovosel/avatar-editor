@@ -2,8 +2,8 @@
   <img src="https://user-images.githubusercontent.com/36193643/236636342-a4f3b025-54a1-4a27-a6d9-9afdfbdd424b.png" />
 </div>
 
-<h1 align=center>Vue material time picker</h1>
-<p align=center>A material time picker component for Vue 3.</p>
+<h1 align=center>Avatar editor</h1>
+<p align=center>An avatar editor component for Vue 3.</p>
 
 ## 🚀 Installation
 
@@ -19,72 +19,102 @@ Import the component locally or define it globally and include the css file:
 
 ```vue
 <template>
-  <div style="display: flex">
-    <time-picker v-model="time" use-seconds />
-    {{ time }}
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      grid-gap: 50px;
+    "
+  >
+    <avatar-editor
+      :width="400"
+      :height="400"
+      ref="avatarEditorRef"
+      @image-ready="onImageReady"
+      v-model:scale="scaleVal"
+    />
+    <input
+      type="range"
+      :min="scaleMin"
+      :max="scaleMax"
+      :step="scaleStep"
+      v-model="scaleVal"
+    />
+    <button @click="save">Save</button>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from "vue";
-import { TimePicker } from "vue-material-time-picker";
-import "vue-material-time-picker/dist/style.css";
-const time = ref(null);
+import { onMounted, onUnmounted, ref } from "vue";
+import avatarEditor, { IAvatarEditor } from "avatar-editor";
+import "avatar-editor/dist/style.css";
+
+const scaleVal = ref<number>(1);
+const scaleStep = 0.02;
+const scaleMin = 1;
+const scaleMax = 3;
+
+const avatarEditorRef = ref<IAvatarEditor | null>(null);
+
+const onImageReady = (scale: number) => {
+  scaleVal.value = scale;
+};
+
+const handleWheelEvent = (e: WheelEvent) => {
+  if (e.deltaY > 0) {
+    // Down
+    if (scaleVal.value - scaleStep >= scaleMin) {
+      scaleVal.value -= scaleStep;
+    }
+  } else {
+    // Up
+    if (scaleVal.value + scaleStep <= scaleMax) {
+      scaleVal.value += scaleStep;
+    }
+  }
+};
+
+const save = () => {
+  if (avatarEditorRef.value) {
+    const canvasData = avatarEditorRef.value.getImageScaled();
+    const img = canvasData.toDataURL("image/png");
+    console.log(img);
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("wheel", handleWheelEvent);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("wheel", handleWheelEvent);
+});
 </script>
+
+The scale of the zoom is controlled from the outside through the `scale` prop.
+To save the image call the exposed `getImageScaled` function.
 ```
 
 ## 📃 Props
 
-| Name          | Type            | Default | Description                                                                                                      |
-| ------------- | --------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
-| `v-model`     | `string/Date`   | null    | Standard two way input, HH:mm:ss format or Date                                                                  |
-| `disabled`    | `boolean`       | false   | Makes the component uninteractable                                                                               |
-| `readonly`    | `boolean`       | false   | Makes the component uninteractable, but without the style of the disabled variant                                |
-| `use-seconds` | `boolean`       | false   | Adds an additional step for picking the time                                                                     |
-| `automatic`   | `boolean`       | true    | Automatically switches to the next step when picking the time                                                    |
-| `hide-title`  | `boolean`       | false   | Hides the time picker title                                                                                      |
-| `width`       | `number/string` | 290px   | Sets the width of the element - can be provided as a string like "290px" or "290" or a number, defaults to 290px |
-| `full-width`  | `boolean`       | false   | Ignores the previous `width` prop and sets the width to 100% of the parent container                             |
-| `color`       | `string`        | #3ba13b | Color of the time picker title and clock hand as well as any active element                                      |
+| Name            | Type       | Default        | Description                                                                            |
+| --------------- | ---------- | -------------- | -------------------------------------------------------------------------------------- |
+| `v-model:scale` | `number`   | 1              | Standard two way input of the scale property which controls how zoomed in the image is |
+| `width`         | `number`   | 200            | Width of the avatar editor                                                             |
+| `height`        | `number`   | 200            | Height of the avatar editor                                                            |
+| `border`        | `number`   | 25             | Border width of the outer selection area                                               |
+| `borderRadius`  | `number`   | 0              | Border radius of the inner selection area, set to high values for a full circle        |
+| `color`         | `number[]` | [0, 0, 0, 0.5] | RGBA value of the outer selection area                                                 |
 
-## 🧩 Slots
+## 🎺 Events
 
-### header
+| Name          | Type                      | Description                                                                                                           |
+| ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `image-ready` | `(scale: number) => void` | An event that fires off after the selected picture is done loading, used for setting the ideal scale of the component |
 
-Use this slot if you want to override the time picker header, an example being:
+## 🎯 Exposed functions
 
-```vue
-<time-picker v-model="time" use-seconds>
-  <template
-    #header="{
-      hours,
-      minutes,
-      seconds,
-      selectHours,
-      selectMinutes,
-      selectSeconds
-    }"
-  >
-    <button @click="selectHours">
-      {{ hours || "--" }}
-    </button>
-    <button @click="selectMinutes">
-      {{ minutes || "--" }}
-    </button>
-    <button @click="selectSeconds">
-      {{ seconds || "--" }}
-    </button>
-  </template>
-</time-picker>
-```
-
-There are a few props being exposed:
-
-| Name            | Type          | Default | Description                                                      |
-| --------------- | ------------- | ------- | ---------------------------------------------------------------- |
-| `hours`         | `number/null` | null    | Hour portion of the time                                         |
-| `minutes`       | `number/null` | null    | Minute portion of the time                                       |
-| `seconds`       | `number/null` | null    | Seconds portion of the time                                      |
-| `selectHours`   | `function`    | N/A     | Helper function used for triggering the selection of the hours   |
-| `selectMinutes` | `function`    | N/A     | Helper function used for triggering the selection of the minutes |
-| `selectSeconds` | `function`    | N/A     | Helper function used for triggering the selection of the seconds |
+| Name             | Type                      | Description                                                                                                                                                                                         |
+| ---------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getImageScaled` | `() => HTMLCanvasElement` | Fetches the current image inside of the inner selection area as a HTMLCanvasElement. It is advised to convert it to a familiar format further using the `toDataUrl` canvas function such as base64. |

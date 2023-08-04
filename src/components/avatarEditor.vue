@@ -10,38 +10,73 @@
     @mousemove="onMouseMove"
     @click="clicked"
     :class="state.cursor"
+    :style="canvasStyle"
   />
   <input type="file" ref="filePicker" @change="fileSelected" hidden />
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import { regex } from "./constants";
+import { ImageStateImage, State } from "./models";
 
-interface ImageStateImage {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  resource: HTMLImageElement | null;
-}
+const emit = defineEmits<{
+  (e: "image-ready", scale: number): void;
+  (e: "update:scale", value: string): void;
+}>();
 
-interface ImageState {
-  drag: boolean;
-  my: number | null;
-  mx: number | null;
-  image: ImageStateImage;
-}
+const props = withDefaults(
+  defineProps<{
+    image?: string;
+    border?: number;
+    borderRadius?: number;
+    width?: number;
+    height?: number;
+    color?: number[];
+    scale: number;
+  }>(),
+  {
+    image: "",
+    border: 25,
+    borderRadius: 0,
+    width: 200,
+    height: 200,
+    color: () => [0, 0, 0, 0.5]
+  }
+);
 
-interface State {
-  cursor: string;
-  scale: number;
-  canvas: CanvasRenderingContext2D | null;
-  context: CanvasRenderingContext2D | null;
-  dragged: boolean;
-  imageLoaded: boolean;
-  changed: boolean;
-  imageState: ImageState;
-}
+const canvas = ref<HTMLCanvasElement | null>(null);
+const filePicker = ref<HTMLInputElement | null>(null);
+
+const state: State = reactive({
+  cursor: "cursor-pointer",
+  scale: 1,
+  canvas: null,
+  context: null,
+  dragged: false,
+  imageLoaded: false,
+  changed: false,
+  imageState: {
+    drag: false,
+    my: null,
+    mx: null,
+    image: {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      resource: null
+    }
+  }
+});
+
+const canvasWidth = computed(() => dimensions.value.canvas.width);
+const canvasHeight = computed(() => dimensions.value.canvas.height);
+
+const canvasStyle = computed(() => ({
+  width: `${canvasWidth.value}px`,
+  height: `${canvasHeight.value}px`
+}));
 
 const drawRoundedRect = (
   context: CanvasRenderingContext2D,
@@ -92,71 +127,15 @@ const drawRoundedRect = (
   }
 };
 
-const emit = defineEmits(["image-ready", "update:scale"]);
-
-const props = withDefaults(
-  defineProps<{
-    image: string;
-    border: number;
-    borderRadius: number;
-    width: number;
-    height: number;
-    color: number[];
-    scale: number;
-  }>(),
-  {
-    image: "",
-    border: 25,
-    borderRadius: 0,
-    width: 200,
-    height: 200,
-    color: () => [0, 0, 0, 0.5]
-  }
-);
-
-const canvas = ref<HTMLCanvasElement | null>(null);
-const filePicker = ref<HTMLInputElement | null>(null);
-
-const state: State = reactive({
-  cursor: "cursor-pointer",
-  scale: 1,
-  canvas: null,
-  context: null,
-  dragged: false,
-  imageLoaded: false,
-  changed: false,
-  imageState: {
-    drag: false,
-    my: null,
-    mx: null,
-    image: {
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      resource: null
-    }
-  }
-});
-
-const canvasWidth = computed(() => {
-  return getDimensions().canvas.width;
-});
-
-const canvasHeight = computed(() => {
-  return getDimensions().canvas.height;
-});
-
 const paint = () => {
   if (state.context) {
     state.context.save();
     state.context.translate(0, 0);
-    state.context.fillStyle = "rgba(" + props.color.slice(0, 4).join(",") + ")";
+    state.context.fillStyle = `rgba(${props.color.slice(0.4).join(",")})`;
     let borderRadius = props.borderRadius;
-    const dimensions = getDimensions();
-    const borderSize = dimensions.border;
-    const height = dimensions.canvas.height;
-    const width = dimensions.canvas.width;
+    const borderSize = dimensions.value.border;
+    const height = dimensions.value.canvas.height;
+    const width = dimensions.value.canvas.width;
     // Clamp border radius between zero (perfect rectangle) and half the size without borders (perfect circle or "pill")
     borderRadius = Math.max(borderRadius, 0);
     borderRadius = Math.min(
@@ -189,29 +168,38 @@ const svgToImage = (rawSVG: string) => {
   return img;
 };
 
-const getDimensions = () => {
-  return {
-    width: props.width,
-    height: props.height,
-    border: props.border,
-    canvas: {
-      width: props.width + props.border * 2,
-      height: props.height + props.border * 2
-    }
-  };
+const getImageScaled = () => {
+  const { width, height } = dimensions.value;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  // Don't paint a border here, as it is the resulting image
+  paintImage(canvas.getContext("2d"), state.imageState.image, 0);
+  return canvas;
 };
+
+defineExpose({ getImageScaled });
+
+const dimensions = computed(() => ({
+  width: props.width,
+  height: props.height,
+  border: props.border,
+  canvas: {
+    width: props.width + props.border * 2,
+    height: props.height + props.border * 2
+  }
+}));
 
 const getInitialSize = (width: number, height: number): ImageStateImage => {
   let newHeight: number;
   let newWidth: number;
-  const dimensions = getDimensions();
-  const canvasRatio = dimensions.height / dimensions.width;
+  const canvasRatio = dimensions.value.height / dimensions.value.width;
   const imageRatio = height / width;
   if (canvasRatio > imageRatio) {
-    newHeight = getDimensions().height;
+    newHeight = dimensions.value.height;
     newWidth = width * (newHeight / height);
   } else {
-    newWidth = getDimensions().width;
+    newWidth = dimensions.value.width;
     newHeight = height * (newWidth / width);
   }
   return {
@@ -247,9 +235,7 @@ const loadImage = (imageURL: string | ArrayBuffer | null) => {
     imageObj.onload = function () {
       handleImageReady(imageObj);
     };
-    if (!isDataURL(imageURL)) {
-      imageObj.crossOrigin = "anonymous";
-    }
+    if (!isDataURL(imageURL)) imageObj.crossOrigin = "anonymous";
     imageObj.src = imageURL;
   }
 };
@@ -290,8 +276,8 @@ const onMouseMove = (e: MouseEvent) => {
   const imageState = state.imageState.image;
   const lastX = imageState.x;
   const lastY = imageState.y;
-  const mousePositionX = e.targetTouches ? e.targetTouches[0].pageX : e.clientX;
-  const mousePositionY = e.targetTouches ? e.targetTouches[0].pageY : e.clientY;
+  const mousePositionX = e.clientX;
+  const mousePositionY = e.clientY;
   const newState = {
     mx: mousePositionX,
     my: mousePositionY,
@@ -309,26 +295,24 @@ const onMouseMove = (e: MouseEvent) => {
 };
 
 const isDataURL = (str: string) => {
-  if (str === null) {
-    return false;
-  }
-  const regex =
-    /^\s*data:([a-z]+\/[a-z]+(;[a-z-]+=[a-z-]+)?)?(;base64)?,[a-z0-9!$&',()*+;=\-._~:@?%\s]*\s*$/i;
+  if (str === null) return false;
   return !!str.match(regex);
 };
 
 const getBoundedX = (x: number, scale: number) => {
   const image = state.imageState.image;
-  const dimensions = getDimensions();
-  let widthDiff = Math.floor((image.width - dimensions.width / scale) / 2);
+  let widthDiff = Math.floor(
+    (image.width - dimensions.value.width / scale) / 2
+  );
   widthDiff = Math.max(0, widthDiff);
   return Math.max(-widthDiff, Math.min(x, widthDiff));
 };
 
 const getBoundedY = (y: number, scale: number) => {
   const image = state.imageState.image;
-  const dimensions = getDimensions();
-  let heightDiff = Math.floor((image.height - dimensions.height / scale) / 2);
+  let heightDiff = Math.floor(
+    (image.height - dimensions.value.height / scale) / 2
+  );
   heightDiff = Math.max(0, heightDiff);
   return Math.max(-heightDiff, Math.min(y, heightDiff));
 };
@@ -355,11 +339,10 @@ const paintImage = (
 
 const calculatePosition = (image: ImageStateImage, border: number) => {
   const img = image || state.imageState.image;
-  const dimensions = getDimensions();
   const width = img.width * state.scale;
   const height = img.height * state.scale;
-  const widthDiff = (width - dimensions.width) / 2;
-  const heightDiff = (height - dimensions.height) / 2;
+  const widthDiff = (width - dimensions.value.width) / 2;
+  const heightDiff = (height - dimensions.value.height) / 2;
   const x = img.x * state.scale - widthDiff + border;
   const y = img.y * state.scale - heightDiff + border;
   return {
@@ -374,38 +357,11 @@ const redraw = () => {
   state.context!.clearRect(
     0,
     0,
-    getDimensions().canvas.width,
-    getDimensions().canvas.height
+    dimensions.value.canvas.width,
+    dimensions.value.canvas.height
   );
   paint();
   paintImage(state.context, state.imageState.image, props.border);
-};
-
-const getImageScaled = () => {
-  const { width, height } = getDimensions();
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  // Don't paint a border here, as it is the resulting image
-  paintImage(canvas.getContext("2d"), state.imageState.image, 0);
-  return canvas;
-};
-
-const getCroppingRect = () => {
-  const dim = getDimensions();
-  const frameRect = {
-    x: dim.border,
-    y: dim.border,
-    width: dim.width,
-    height: dim.height
-  };
-  const imageRect = calculatePosition(state.imageState.image, dim.border);
-  return {
-    x: (frameRect.x - imageRect.x) / imageRect.width,
-    y: (frameRect.y - imageRect.y) / imageRect.height,
-    width: frameRect.width / imageRect.width,
-    height: frameRect.height / imageRect.height
-  };
 };
 
 const clicked = () => {
@@ -419,9 +375,7 @@ const clicked = () => {
 const fileSelected = (e: Event) => {
   if (e.target) {
     const files = (e.target as HTMLInputElement).files;
-    if (!files || !files.length) {
-      return;
-    }
+    if (!files || !files.length) return;
     const reader = new FileReader();
     state.changed = true;
     reader.onload = (e) => {
@@ -434,9 +388,7 @@ const fileSelected = (e: Event) => {
 watch(
   () => state.imageState,
   () => {
-    if (state.imageLoaded) {
-      redraw();
-    }
+    if (state.imageLoaded) redraw();
   },
   {
     deep: true
@@ -447,9 +399,7 @@ watch(
   () => props.scale,
   (val) => {
     state.scale = val;
-    if (state.imageLoaded) {
-      redraw();
-    }
+    if (state.imageLoaded) redraw();
   }
 );
 
@@ -471,7 +421,7 @@ onMounted(() => {
 });
 </script>
 
-<style type="text/css">
+<style scoped>
 .cursor-pointer {
   cursor: pointer;
 }
