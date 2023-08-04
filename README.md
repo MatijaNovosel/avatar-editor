@@ -47,7 +47,7 @@ Import the component locally or define it globally and include the css file:
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from "vue";
-import avatarEditor, { IAvatarEditor } from "avatar-editor";
+import { AvatarEditor } from "avatar-editor";
 import "avatar-editor/dist/style.css";
 
 const scaleVal = ref<number>(1);
@@ -55,7 +55,7 @@ const scaleStep = 0.02;
 const scaleMin = 1;
 const scaleMax = 3;
 
-const avatarEditorRef = ref<IAvatarEditor | null>(null);
+const avatarEditorRef = ref<any>(null);
 
 const onImageReady = (scale: number) => {
   scaleVal.value = scale;
