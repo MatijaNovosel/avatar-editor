@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/MatijaNovosel/avatar-editor/assets/36193643/c3e3daad-d27e-418e-bc8f-cfec9be0f625" />
+  <img src="https://github.com/MatijaNovosel/avatar-editor/assets/36193643/df4ea5e4-46e0-43a8-b397-78bb1871627e" />
 </div>
 
 <h1 align=center>Avatar editor</h1>
