@@ -91,10 +91,10 @@ onUnmounted(() => {
   document.removeEventListener("wheel", handleWheelEvent);
 });
 </script>
+```
 
 The scale of the zoom is controlled from the outside through the `scale` prop.
 To save the image call the exposed `getImageScaled` function.
-```
 
 ## 📃 Props
 
