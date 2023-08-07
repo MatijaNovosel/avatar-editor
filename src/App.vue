@@ -42,11 +42,9 @@ const onImageReady = (scale: number) => {
 };
 
 const handleWheelEvent = (e: WheelEvent) => {
-  if (e.deltaY > 0) {
+  if (e.deltaY > 0 && scaleVal.value - scaleStep >= scaleMin) {
     // Down
-    if (scaleVal.value - scaleStep >= scaleMin) {
-      scaleVal.value -= scaleStep;
-    }
+    scaleVal.value -= scaleStep;
   } else {
     // Up
     if (scaleVal.value + scaleStep <= scaleMax) {
