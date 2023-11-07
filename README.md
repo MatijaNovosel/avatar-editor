@@ -13,6 +13,11 @@ Install using your package manager of choice:
 yarn add avatar-editor
 ```
 
+## ✨ Features
+
+- Cropping images of any format
+- Exporting said image when cropped in base64 format
+
 ## ⚙️ Usage
 
 Import the component locally or define it globally and include the css file:
