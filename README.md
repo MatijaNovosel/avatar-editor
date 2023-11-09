@@ -18,6 +18,10 @@ yarn add avatar-editor
 - Cropping images of any format
 - Exporting said image when cropped in base64 format
 
+## 📺 Demo
+
+https://matija-components.vercel.app/date-picker
+
 ## ⚙️ Usage
 
 Import the component locally or define it globally and include the css file:
