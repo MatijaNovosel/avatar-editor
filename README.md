@@ -20,7 +20,7 @@ yarn add avatar-editor
 
 ## 📺 Demo
 
-https://matija-components.vercel.app/date-picker
+https://matija-components.vercel.app/avatar-editor
 
 ## ⚙️ Usage
 
