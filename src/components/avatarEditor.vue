@@ -403,6 +403,13 @@ watch(
   }
 );
 
+watch(
+  () => props.borderRadius,
+  () => {
+    if (state.imageLoaded) redraw();
+  }
+);
+
 onMounted(() => {
   state.context = canvas.value!.getContext("2d");
   paint();
