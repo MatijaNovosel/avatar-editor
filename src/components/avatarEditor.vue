@@ -23,6 +23,7 @@ import { ImageStateImage, State } from "./models";
 const emit = defineEmits<{
   (e: "image-ready", scale: number): void;
   (e: "update:scale", value: string): void;
+  (e: "onChangeFile", value: File): void;
 }>();
 
 const props = withDefaults(
@@ -376,6 +377,7 @@ const fileSelected = (e: Event) => {
   if (e.target) {
     const files = (e.target as HTMLInputElement).files;
     if (!files || !files.length) return;
+    onChangeFile(files[0])
     const reader = new FileReader();
     state.changed = true;
     reader.onload = (e) => {
