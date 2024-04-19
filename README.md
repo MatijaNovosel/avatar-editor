@@ -5,6 +5,10 @@
 <h1 align=center>Avatar editor</h1>
 <p align=center>An avatar editor component for Vue 3.</p>
 
+``
+This repository fork from https://github.com/MatijaNovosel/avatar-editor
+``
+
 ## 🚀 Installation
 
 Install using your package manager of choice:
