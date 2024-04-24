@@ -12,6 +12,7 @@
       :height="400"
       ref="avatarEditorRef"
       @image-ready="onImageReady"
+      @on-change-file="onChangeFile"
       v-model:scale="scaleVal"
     />
     <input
@@ -31,6 +32,7 @@ import avatarEditor from "./components/avatarEditor.vue";
 import { IAvatarEditor } from "./components/models";
 
 const scaleVal = ref<number>(1);
+const file = ref<File | null>(null);
 const scaleStep = 0.02;
 const scaleMin = 1;
 const scaleMax = 3;
@@ -39,6 +41,11 @@ const avatarEditorRef = ref<IAvatarEditor | null>(null);
 
 const onImageReady = (scale: number) => {
   scaleVal.value = scale;
+};
+
+const onChangeFile = (fileChanged: File) => {
+  file.value = fileChanged;
+  console.table(file.value)
 };
 
 const handleWheelEvent = (e: WheelEvent) => {
