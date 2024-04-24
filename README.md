@@ -119,6 +119,7 @@ To save the image call the exposed `getImageScaled` function.
 | Name          | Type                      | Description                                                                                                           |
 | ------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `image-ready` | `(scale: number) => void` | An event that fires off after the selected picture is done loading, used for setting the ideal scale of the component |
+| `onChangeFile`| `(file: File) => void`    | An event that fires when a file is uploaded or changed                         |
 
 ## 🎯 Exposed functions
 
