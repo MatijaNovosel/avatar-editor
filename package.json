@@ -1,7 +1,7 @@
 {
   "name": "avatar-editor",
   "private": false,
-  "version": "0.0.3",
+  "version": "1.0.0",
   "type": "module",
   "files": [
     "dist",
@@ -21,6 +21,7 @@
   "module": "./dist/avatar-editor.js",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/avatar-editor.js",
       "require": "./dist/avatar-editor.umd.cjs"
     },
@@ -29,7 +30,6 @@
       "require": "./dist/style.css"
     }
   },
-  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
